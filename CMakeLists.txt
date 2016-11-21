@@ -24,23 +24,39 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-cmake_minimum_required(VERSION 3.3.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
 
-project(libmrsid NONE)
+project(mrsid NONE)
 
+# some init settings
 set(CMAKE_COLOR_MAKEFILE ON)
+# set path to additional CMake modules
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
+
 
 include(GNUInstallDirs)
-
-set(FOR_MSVC_12 TRUE CACHE BOOL "Install libs for msvc 12")
 
 set(PUBLIC_HDRS
 )
 
 set(DOWNLOAD_PATH_BASE "http://176.9.38.120/third-party/mrsid/current")
 if(WIN32)
-    if(FOR_MSVC_12)
-        set(DOWNLOAD_PATH "${DOWNLOAD_PATH_BASE}/win/x86/vc12/mrsid.zip" )
+    if(CMAKE_CL_64)
+        if(MSVC11)
+            set(DOWNLOAD_PATH "${DOWNLOAD_PATH_BASE}/win/x86_64/vc110/lib.zip" )
+        elseif(MSVC12)
+            set(DOWNLOAD_PATH "${DOWNLOAD_PATH_BASE}/win/x86_64/vc120/lib.zip" )
+        elseif(MSVC14)
+            set(DOWNLOAD_PATH "${DOWNLOAD_PATH_BASE}/win/x86_64/vc140/lib.zip" )
+        endif()
+    else()
+        if(MSVC11)
+            set(DOWNLOAD_PATH "${DOWNLOAD_PATH_BASE}/win/x86/vc110/lib.zip" )
+        elseif(MSVC12)
+            set(DOWNLOAD_PATH "${DOWNLOAD_PATH_BASE}/win/x86/vc120/lib.zip" )
+        elseif(MSVC14)
+            set(DOWNLOAD_PATH "${DOWNLOAD_PATH_BASE}/win/x86/vc140/lib.zip" )
+        endif()
     endif()
 endif()
 
@@ -49,7 +65,7 @@ if (NOT DOWNLOAD_PATH)
     return()
 endif()
 
-file(DOWNLOAD ${DOWNLOAD_PATH} "${CMAKE_BINARY_DIR}/mrsid.zip" STATUS DOWNLOAD_STATUS SHOW_PROGRESS)
+file(DOWNLOAD ${DOWNLOAD_PATH} "${CMAKE_BINARY_DIR}/lib.zip" STATUS DOWNLOAD_STATUS SHOW_PROGRESS)
 
 list(GET DOWNLOAD_STATUS 0 DOWNLOAD_STATUS_CODE)
 if (NOT ${DOWNLOAD_STATUS_CODE} EQUAL 0)
@@ -58,7 +74,7 @@ if (NOT ${DOWNLOAD_STATUS_CODE} EQUAL 0)
 endif()
 
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -E tar xzf ${CMAKE_BINARY_DIR}/mrsid.zip
+    COMMAND ${CMAKE_COMMAND} -E tar xzf ${CMAKE_BINARY_DIR}/lib.zip
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )
 
@@ -66,12 +82,23 @@ set(LIB_NAME ${PROJECT_NAME})
 
 add_library(${LIB_NAME} INTERFACE)
 
+include(util)
+check_version(MRSID_MAJOR_VERSION MRSID_MINOR_VERSION MRSID_REV_VERSION)
+set(VERSION ${MRSID_MAJOR_VERSION}.${MRSID_MINOR_VERSION}.${MRSID_REV_VERSION})
+#report version
+report_version(${PROJECT_NAME} ${VERSION})
+
+
 target_link_libraries(
-    ${LIB_NAME} INTERFACE "${CMAKE_BINARY_DIR}/mrsid/lib/lti_dsdk.lib"
+    ${LIB_NAME} INTERFACE "${CMAKE_BINARY_DIR}/lib/lib/lti_dsdk.lib"
 )
 
 export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}-exports.cmake)
 
-install(DIRECTORY "${CMAKE_BINARY_DIR}/mrsid/include/" DESTINATION "${CMAKE_INSTALL_FULL_INCLUDEDIR}/libmrsid")
-install(DIRECTORY "${CMAKE_BINARY_DIR}/mrsid/lib/" DESTINATION "${CMAKE_INSTALL_FULL_LIBDIR}")
-install(DIRECTORY "${CMAKE_BINARY_DIR}/mrsid/bin/" DESTINATION "${CMAKE_INSTALL_FULL_BINDIR}")
+if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
+    install(DIRECTORY "${CMAKE_BINARY_DIR}/lib/lib/" DESTINATION "${CMAKE_INSTALL_FULL_LIBDIR}")
+    install(DIRECTORY "${CMAKE_BINARY_DIR}/lib/bin/" DESTINATION "${CMAKE_INSTALL_FULL_BINDIR}")
+endif()
+if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
+    install(DIRECTORY "${CMAKE_BINARY_DIR}/lib/include/" DESTINATION "${CMAKE_INSTALL_FULL_INCLUDEDIR}/libmrsid")
+endif() 
