@@ -25,7 +25,7 @@ function(check_version major minor rev)
     # parse the version number from gdal_version.h and include in
     # major, minor and rev parameters
 
-    file(READ ${CMAKE_BINARY_DIR}/lib/include/lti_version.h VERSION_H_CONTENTS)
+    file(READ ${CMAKE_BINARY_DIR}/include/lti_version.h VERSION_H_CONTENTS)
 
     string(REGEX MATCH "LTI_SDK_MAJOR[ \t]+([0-9]+)"
       MAJOR_VERSION ${VERSION_H_CONTENTS})

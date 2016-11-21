@@ -26,7 +26,7 @@
 
 cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
 
-project(mrsid NONE)
+project(mrsid)
 
 # some init settings
 set(CMAKE_COLOR_MAKEFILE ON)
@@ -42,7 +42,9 @@ set(PUBLIC_HDRS
 set(DOWNLOAD_PATH_BASE "http://176.9.38.120/third-party/mrsid/current")
 if(WIN32)
     if(CMAKE_CL_64)
-        if(MSVC11)
+        if(MSVC10)
+            set(DOWNLOAD_PATH "${DOWNLOAD_PATH_BASE}/win/x86_64/vc100/lib.zip" )
+        elseif(MSVC11)
             set(DOWNLOAD_PATH "${DOWNLOAD_PATH_BASE}/win/x86_64/vc110/lib.zip" )
         elseif(MSVC12)
             set(DOWNLOAD_PATH "${DOWNLOAD_PATH_BASE}/win/x86_64/vc120/lib.zip" )
@@ -50,7 +52,9 @@ if(WIN32)
             set(DOWNLOAD_PATH "${DOWNLOAD_PATH_BASE}/win/x86_64/vc140/lib.zip" )
         endif()
     else()
-        if(MSVC11)
+        if(MSVC10)
+            set(DOWNLOAD_PATH "${DOWNLOAD_PATH_BASE}/win/x86/vc100/lib.zip" )
+        elseif(MSVC11)
             set(DOWNLOAD_PATH "${DOWNLOAD_PATH_BASE}/win/x86/vc110/lib.zip" )
         elseif(MSVC12)
             set(DOWNLOAD_PATH "${DOWNLOAD_PATH_BASE}/win/x86/vc120/lib.zip" )
@@ -62,19 +66,20 @@ endif()
 
 if (NOT DOWNLOAD_PATH)
     message(FATAL_ERROR "There is no relevant libs")
-    return()
 endif()
 
-file(DOWNLOAD ${DOWNLOAD_PATH} "${CMAKE_BINARY_DIR}/lib.zip" STATUS DOWNLOAD_STATUS SHOW_PROGRESS)
+file(DOWNLOAD ${DOWNLOAD_PATH} "${CMAKE_BINARY_DIR}/mrsid.zip" SHOW_PROGRESS STATUS MRSID_DOWNLOAD_STATUS LOG MRSID_LOG)
 
-list(GET DOWNLOAD_STATUS 0 DOWNLOAD_STATUS_CODE)
-if (NOT ${DOWNLOAD_STATUS_CODE} EQUAL 0)
-    message(FATAL_ERROR "Can not download mrsid lib by url:\n\t${DOWNLOAD_PATH}.\nGet error:\n\t${DOWNLOAD_STATUS_CODE}")
-    return()
+list(GET MRSID_DOWNLOAD_STATUS 0 MRSID_DOWNLOAD_STATUS_CODE)
+if (NOT MRSID_DOWNLOAD_STATUS_CODE EQUAL 0)
+    message(FATAL_ERROR "Can not download lib by url: ${DOWNLOAD_PATH}. 
+    error: ${MRSID_DOWNLOAD_STATUS}
+    log: ${MRSID_LOG}"
+    )
 endif()
 
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -E tar xzf ${CMAKE_BINARY_DIR}/lib.zip
+    COMMAND ${CMAKE_COMMAND} -E tar xzf ${CMAKE_BINARY_DIR}/mrsid.zip
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )
 
@@ -90,15 +95,15 @@ report_version(${PROJECT_NAME} ${VERSION})
 
 
 target_link_libraries(
-    ${LIB_NAME} INTERFACE "${CMAKE_BINARY_DIR}/lib/lib/lti_dsdk.lib"
+    ${LIB_NAME} INTERFACE "${CMAKE_BINARY_DIR}/lib/lti_dsdk.lib"
 )
 
 export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}-exports.cmake)
 
 if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
-    install(DIRECTORY "${CMAKE_BINARY_DIR}/lib/lib/" DESTINATION "${CMAKE_INSTALL_FULL_LIBDIR}")
-    install(DIRECTORY "${CMAKE_BINARY_DIR}/lib/bin/" DESTINATION "${CMAKE_INSTALL_FULL_BINDIR}")
+    install(DIRECTORY "${CMAKE_BINARY_DIR}/lib/" DESTINATION "${CMAKE_INSTALL_FULL_LIBDIR}")
+    install(DIRECTORY "${CMAKE_BINARY_DIR}/bin/" DESTINATION "${CMAKE_INSTALL_FULL_BINDIR}")
 endif()
 if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
-    install(DIRECTORY "${CMAKE_BINARY_DIR}/lib/include/" DESTINATION "${CMAKE_INSTALL_FULL_INCLUDEDIR}/libmrsid")
+    install(DIRECTORY "${CMAKE_BINARY_DIR}/include/" DESTINATION "${CMAKE_INSTALL_FULL_INCLUDEDIR}/mrsid")
 endif() 
